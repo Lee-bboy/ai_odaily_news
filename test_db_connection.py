@@ -127,12 +127,15 @@ def test_sqlalchemy_connection():
         connection_string = f"mysql+pymysql://{user}:{password}@{host}:{port}/{database}?charset={charset}"
         engine = create_engine(connection_string)
         
-        # 测试连接
-        with engine.connect() as conn:
-            result = conn.execute("SELECT VERSION()")
-            version = result.fetchone()
+        # 测试连接 - 使用pandas直接测试
+        try:
+            df = pd.read_sql("SELECT VERSION() as version", engine)
+            version = df.iloc[0]['version']
             print(f"✓ SQLAlchemy连接成功")
-            print(f"MySQL版本: {version[0]}")
+            print(f"MySQL版本: {version}")
+        except Exception as e:
+            print(f"✗ SQLAlchemy查询失败: {e}")
+            return False
         
         engine.dispose()
         return True
