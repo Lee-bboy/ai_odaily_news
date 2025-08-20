@@ -6,11 +6,11 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 from transformers import (
     get_linear_schedule_with_warmup, 
-    AdamW, 
     AutoTokenizer,
     AutoModel,
     AutoConfig
 )
+from torch.optim import AdamW
 from sklearn.metrics import classification_report, accuracy_score, f1_score
 import numpy as np
 import pandas as pd
