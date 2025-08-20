@@ -30,6 +30,9 @@ class DatabaseManager:
         self.engine = None
         self.connection = None
         
+        # 自动连接数据库
+        self.connect()
+        
     def connect(self):
         try:
             connection_string = f"mysql+pymysql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}?charset={self.charset}"
@@ -60,6 +63,10 @@ class DatabaseManager:
     
     def get_unlabeled_data(self, limit: int = None) -> pd.DataFrame:
         try:
+            if not self.engine:
+                logger.error("数据库引擎未初始化")
+                return pd.DataFrame()
+                
             query = f"""
                 SELECT {self.id_column}, {self.title_column}, {self.description_column}
                 FROM {self.table_name}
@@ -80,6 +87,10 @@ class DatabaseManager:
     
     def get_labeled_data(self, limit: int = None) -> pd.DataFrame:
         try:
+            if not self.engine:
+                logger.error("数据库引擎未初始化")
+                return pd.DataFrame()
+                
             query = f"""
                 SELECT {self.id_column}, {self.title_column}, {self.description_column}, {self.label_column}
                 FROM {self.table_name}

@@ -112,7 +112,7 @@ def auto_label_data():
         logger.info("获取未标注数据...")
         unlabeled_data = db_manager.get_unlabeled_data()
         
-        if not unlabeled_data:
+        if unlabeled_data.empty:
             logger.info("没有找到未标注的数据")
             return False
         
