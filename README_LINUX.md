@@ -133,7 +133,21 @@ jobs
 
 ## 🚨 常见问题
 
-### 1. 内存不足
+### 1. 样本数量不足
+```bash
+# 运行数据增强脚本
+python3 data_augmentation.py
+
+# 或者在训练前使用数据增强
+from data_augmentation import DataAugmentor
+augmentor = DataAugmentor()
+augmented_data = augmentor.create_balanced_dataset(
+    your_data, 'title', 'description', 'sentiment', 
+    samples_per_class=20
+)
+```
+
+### 2. 内存不足
 ```bash
 # 调整batch_size
 # 在config.ini中设置更小的batch_size

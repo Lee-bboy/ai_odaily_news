@@ -126,6 +126,8 @@ class DatasetBuilder:
         texts = []
         labels = []
         
+        print(f"开始处理数据集，总行数: {len(df)}")
+        
         for _, row in df.iterrows():
             title = row[title_col]
             description = row[description_col]
@@ -141,27 +143,75 @@ class DatasetBuilder:
                 texts.append(combined_text)
                 labels.append(label)
         
+        print(f"有效数据行数: {len(texts)}")
+        
+        # 检查标签分布
+        from collections import Counter
+        label_counts = Counter(labels)
+        print("标签分布:")
+        for label, count in label_counts.items():
+            print(f"  {label}: {count}")
+        
         # 编码标签
         if labels:
             encoded_labels = self.label_encoder.fit_transform(labels)
+            print(f"标签编码完成，类别数: {len(self.label_encoder.classes_)}")
             return texts, encoded_labels.tolist()
         
+        print("⚠️  警告: 没有有效的数据")
         return [], []
     
     def split_dataset(self, texts: List[str], labels: List[int], 
                      test_size: float = 0.2, val_size: float = 0.1, 
                      random_state: int = 42) -> Tuple:
-        # 首先分割出测试集
-        train_texts, test_texts, train_labels, test_labels = train_test_split(
-            texts, labels, test_size=test_size, random_state=random_state, stratify=labels
-        )
+        """分割数据集，处理样本数量不足的情况"""
+        from collections import Counter
         
-        # 从训练集中分割出验证集
-        val_size_adjusted = val_size / (1 - test_size)
-        train_texts, val_texts, train_labels, val_labels = train_test_split(
-            train_texts, train_labels, test_size=val_size_adjusted, 
-            random_state=random_state, stratify=train_labels
-        )
+        # 检查每个类别的样本数量
+        label_counts = Counter(labels)
+        min_samples_per_class = min(label_counts.values())
+        
+        # 如果某个类别样本太少，调整分割策略
+        if min_samples_per_class < 3:
+            print(f"⚠️  警告: 某个类别样本数量过少 ({min_samples_per_class})，将使用简单随机分割")
+            
+            # 使用简单随机分割，不使用stratify
+            train_texts, test_texts, train_labels, test_labels = train_test_split(
+                texts, labels, test_size=test_size, random_state=random_state
+            )
+            
+            # 从训练集中分割出验证集
+            val_size_adjusted = val_size / (1 - test_size)
+            train_texts, val_texts, train_labels, val_labels = train_test_split(
+                train_texts, train_labels, test_size=val_size_adjusted, 
+                random_state=random_state
+            )
+        else:
+            # 样本数量足够，使用分层抽样
+            try:
+                # 首先分割出测试集
+                train_texts, test_texts, train_labels, test_labels = train_test_split(
+                    texts, labels, test_size=test_size, random_state=random_state, stratify=labels
+                )
+                
+                # 从训练集中分割出验证集
+                val_size_adjusted = val_size / (1 - test_size)
+                train_texts, val_texts, train_labels, val_labels = train_test_split(
+                    train_texts, train_labels, test_size=val_size_adjusted, 
+                    random_state=random_state, stratify=train_labels
+                )
+            except ValueError as e:
+                print(f"⚠️  分层抽样失败: {e}，使用简单随机分割")
+                # 回退到简单随机分割
+                train_texts, test_texts, train_labels, test_labels = train_test_split(
+                    texts, labels, test_size=test_size, random_state=random_state
+                )
+                
+                val_size_adjusted = val_size / (1 - test_size)
+                train_texts, val_texts, train_labels, val_labels = train_test_split(
+                    train_texts, train_labels, test_size=val_size_adjusted, 
+                    random_state=random_state
+                )
         
         return (train_texts, train_labels), (val_texts, val_labels), (test_texts, test_labels)
     
